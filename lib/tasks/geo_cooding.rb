@@ -1,10 +1,9 @@
 # coding: utf-8
 require 'open-uri'
-require 'rexml/document'
-require 'uri'
+require 'json'
 require "date"
 
-class Tasks::CafeCrawl
+class Tasks::GeoCooding
 
   #変数初期化
   @@start       = 0;
@@ -12,31 +11,28 @@ class Tasks::CafeCrawl
   @@limit       = 200
   @@loop_limit  = 50
   @@loop_count  = 0
-  @@api_url = 'http://api.gnavi.co.jp/ver1/RestSearchAPI/?'
+  @@api_url = 'http://maps.googleapis.com/maps/api/geocode/json?'
 
 
   # メイン処理
   def self.execute
 
-    start = 0
+    point = 0
     # puts 'test'
     #まずは、DBから値を取得
-    crawl_result = CrawlResults.find_by(:crawl_id => '1')
+    geocode_results = GeocodeResults.find_by(:id => '1')
     # puts 'test'
     #終了ポイントがあれば取り出す
-    unless crawl_result.blank?
-      start = crawl_result.start
+    unless geocode_results.blank?
+      point = geocode_results.point
     end
 
-    loopstart = 0
-    for num in 0..@@loop_limit do
-      loopstart = start + @@limit*num
-      # puts loopstart.to_s
-      self.main(loopstart)
-    end
+    #カフェデータの住所も取得
+    cafe_list = Cafe.find(:all, :offset => 5000, :limit => point)
 
-    #最後の後始末
-    start = loopstart
+    Cafe.find(:all, :offset => 5000, :limit => point).each { |cafe|
+      self.main(cafe.address,cafe.id)
+    }
 
     year  = Time.now.year
     month = Time.now.month
@@ -45,71 +41,47 @@ class Tasks::CafeCrawl
     puts date
     ##ループ結果を保存して終了
     ##TODO:elseはまだ途中
-    if crawl_result != nil
+    if geocode_results != nil
 
-      crawl_result.crawl_id = 1
-      crawl_result.start = start
-      crawl_result.crawl_date = date
-      crawl_result.save
+      geocode_results.id = 1
+      geocode_results.point = point+5000
+      geocode_results.date = date
+      geocode_results.save
     else
       puts date
-      crawl_result = CrawlResults.create(
-        :crawl_id => 1,
-        :start => start,
-        :crawl_date => date
+      geocode_results = GeocodeResults.create(
+        :id => 1,
+        :point => point+5000,
+        :date => date
       )
-      puts crawl_result.start
+
     end
 
 
   end
 
-  def self.main(start)
-    freeword = URI.encode('カフェ')
-    doc = REXML::Document.new(open(@@api_url+'keyid='+@@apikey+'&offset='+start.to_s+'&hit_per_page='+@@limit.to_s+'&freeword='+freeword))
+  def self.main(address,cafe_id)
+    #address2 = address.split(/\s+/)[0]+' '+address.split(/\s+/)[1];
 
-    puts @@api_url+'keyid='+@@apikey+'&offset='+start.to_s+'&hit_per_page='+@@limit.to_s+'&freeword='+freeword
-    return_count = doc.elements['response/total_hit_count'].text
+    freeword = URI.encode(address)
+puts @@api_url+'address='+freeword+'&sensor=true'
+    uri = URI.parse(@@api_url+'address='+freeword+'&sensor=true')
+    json = Net::HTTP.get(uri)
+    result = JSON.parse(json)
+puts cafe_id
+puts result['results']
+puts result['results'][0]
+    unless result['results'].blank?
+      lat = result['results'][0]['geometry']['location']['lat']
+      lng = result['results'][0]['geometry']['location']['lng']
 
-    #ループでバルクインサート作る
-    cafe_list = []
-    crawl_list = []
+      cafe = Cafe.find_by(:id => cafe_id)
+      cafe.lat = lat.to_s
+      cafe.lng = lng.to_s
+      cafe.save
 
-    doc.elements.each('response/rest') do |element|
-      if element.elements['id'] != nil
-        # puts element.elements['name'].text
-        # puts product[1]['Name']
-        # puts product[1]['Description']
-        # puts product[1]['Url']
-        # puts product[1]['Image']['Small']
-        # puts product[1]['Image']['Medium']
-        # puts product[1]['ProductId']
-        # puts product[1]['PriceLabel']['FixedPrice']
-        # puts product[1]['PriceLabel']['DefaultPrice']
-        # puts product[1]['PriceLabel']['SalePrice']
-        # puts product[1]['PriceLabel']['PeriodStart']
-        # puts product[1]['PriceLabel']['PeriodEnd']
-        # puts '======================================'
-
-        puts element
-        puts element.elements['id'].text
-        puts element.elements['name'].text
-        puts element.elements['latitude'].text
-        puts element.elements['longitude'].text
-        puts element.elements['url'].text
-        puts element.elements['address'].text
-
-        # cafe_list << Cafe.new(
-        # id:element.elements['id'].text,
-        # store_name: element.elements['name'].text,
-        # lat: element.elements['latitude'].text,
-        # lng: element.elements['longitude'].text,
-        # url: element.elements['url'].text,
-        # address: element.elements['address'].text
-        # )
-
-      end
     end
+
     # Cafe.import cafe_list
 
   end

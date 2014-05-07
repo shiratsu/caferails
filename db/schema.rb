@@ -11,9 +11,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140413154540) do
+ActiveRecord::Schema.define(version: 20140506061629) do
 
   create_table "caves", force: true do |t|
+    t.string   "store_name"
+    t.string   "log_image"
+    t.string   "address"
+    t.float    "lat"
+    t.float    "lng"
+    t.string   "url"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "caves_20140506", force: true do |t|
     t.string   "store_name"
     t.string   "log_image"
     t.string   "address"
@@ -27,6 +38,11 @@ ActiveRecord::Schema.define(version: 20140413154540) do
   create_table "crawl_results", primary_key: "crawl_id", force: true do |t|
     t.integer "start"
     t.date    "crawl_date"
+  end
+
+  create_table "geocode_results", force: true do |t|
+    t.integer "point"
+    t.date    "date"
   end
 
 end
