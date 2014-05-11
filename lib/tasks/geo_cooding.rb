@@ -25,6 +25,8 @@ class Tasks::GeoCooding
 
     #カフェデータの住所も取得
     Cafe.find(:all, :offset => point, :limit => 2400).each { |cafe|
+
+      #住所をもとに緯度経度を取り出す
       self.main(cafe.address,cafe.id)
     }
 
@@ -34,7 +36,7 @@ class Tasks::GeoCooding
     date = sprintf("%04d-%02d-%02d",year,month,day)
     puts date
     ##ループ結果を保存して終了
-    ##TODO:elseはまだ途中
+
     if geocode_results != nil
 
       geocode_results.id = 1
@@ -54,17 +56,18 @@ class Tasks::GeoCooding
 
   end
 
+  #住所をもとに緯度経度を取り出して、DBに保存
   def self.main(address,cafe_id)
     #address2 = address.split(/\s+/)[0]+' '+address.split(/\s+/)[1];
 
     freeword = URI.encode(address)
-puts @@api_url+'address='+freeword+'&sensor=true'
+#puts @@api_url+'address='+freeword+'&sensor=true'
     uri = URI.parse(@@api_url+'address='+freeword+'&sensor=true')
     json = Net::HTTP.get(uri)
     result = JSON.parse(json)
-puts cafe_id
-puts result['results']
-puts result['results'][0]
+#puts cafe_id
+#puts result['results']
+#puts result['results'][0]
     unless result['results'].blank?
       lat = result['results'][0]['geometry']['location']['lat']
       lng = result['results'][0]['geometry']['location']['lng']
