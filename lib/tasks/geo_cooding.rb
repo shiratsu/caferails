@@ -7,10 +7,6 @@ class Tasks::GeoCooding
 
   #変数初期化
   @@start       = 0;
-  @@apikey      = 'a3050b53541d7189c7d6da8ba3303d91'
-  @@limit       = 200
-  @@loop_limit  = 50
-  @@loop_count  = 0
   @@api_url = 'http://maps.googleapis.com/maps/api/geocode/json?'
 
 
@@ -28,9 +24,7 @@ class Tasks::GeoCooding
     end
 
     #カフェデータの住所も取得
-    cafe_list = Cafe.find(:all, :offset => 5000, :limit => point)
-
-    Cafe.find(:all, :offset => 5000, :limit => point).each { |cafe|
+    Cafe.find(:all, :offset => point, :limit => 2400).each { |cafe|
       self.main(cafe.address,cafe.id)
     }
 
@@ -44,14 +38,14 @@ class Tasks::GeoCooding
     if geocode_results != nil
 
       geocode_results.id = 1
-      geocode_results.point = point+5000
+      geocode_results.point = point+2400
       geocode_results.date = date
       geocode_results.save
     else
       puts date
       geocode_results = GeocodeResults.create(
         :id => 1,
-        :point => point+5000,
+        :point => point+2400,
         :date => date
       )
 
@@ -78,6 +72,7 @@ puts result['results'][0]
       cafe = Cafe.find_by(:id => cafe_id)
       cafe.lat = lat.to_s
       cafe.lng = lng.to_s
+      cafe.latlng_update_flag = 1
       cafe.save
 
     end

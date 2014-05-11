@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140506061629) do
+ActiveRecord::Schema.define(version: 20140508162047) do
 
   create_table "caves", force: true do |t|
     t.string   "store_name"
@@ -22,6 +22,7 @@ ActiveRecord::Schema.define(version: 20140506061629) do
     t.string   "url"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "latlng_update_flag"
   end
 
   create_table "caves_20140506", force: true do |t|
