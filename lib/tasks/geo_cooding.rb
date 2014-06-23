@@ -24,7 +24,7 @@ class Tasks::GeoCooding
     end
 
     #カフェデータの住所も取得
-    Cafe.find(:all, :offset => point, :limit => 2400).each { |cafe|
+    Cafe.find(:all, :conditions => {:latlng_update_flag => nil},:offset => point, :limit => 2400 ).each { |cafe|
 
       #住所をもとに緯度経度を取り出す
       self.main(cafe.address,cafe.id)
@@ -77,7 +77,11 @@ class Tasks::GeoCooding
       cafe.lng = lng.to_s
       cafe.latlng_update_flag = 1
       cafe.save
-
+    else
+      if address.split(/\s+/).length == 3
+        address = address.split(/\s+/)[0]+' '+address.split(/\s+/)[1];
+        self.main(address,cafe_id)
+      end
     end
 
     # Cafe.import cafe_list
