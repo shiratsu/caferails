@@ -30,6 +30,8 @@ class Tasks::GeoCooding
       self.main(cafe.address,cafe.id)
     }
 
+    #住所をもとに緯度経度を取り出す
+    # self.main("〒100-0006 東京都千代田区有楽町2-5-1 ルミネ有楽町 ルミネ1 3F","gazv401")Time.now.month
     year  = Time.now.year
     month = Time.now.month
     day   = Time.now.day
@@ -61,13 +63,13 @@ class Tasks::GeoCooding
     #address2 = address.split(/\s+/)[0]+' '+address.split(/\s+/)[1];
 
     freeword = URI.encode(address)
-#puts @@api_url+'address='+freeword+'&sensor=true'
+# puts @@api_url+'address='+freeword+'&sensor=true'
     uri = URI.parse(@@api_url+'address='+freeword+'&sensor=true')
     json = Net::HTTP.get(uri)
     result = JSON.parse(json)
 #puts cafe_id
-#puts result['results']
-#puts result['results'][0]
+# puts result['results']
+# puts result['results'][0]
     unless result['results'].blank?
       lat = result['results'][0]['geometry']['location']['lat']
       lng = result['results'][0]['geometry']['location']['lng']
@@ -78,7 +80,7 @@ class Tasks::GeoCooding
       cafe.latlng_update_flag = 1
       cafe.save
     else
-      if address.split(/\s+/).length == 3
+      if address.split(/\s+/).length >= 3
         address = address.split(/\s+/)[0]+' '+address.split(/\s+/)[1];
         self.main(address,cafe_id)
       end
